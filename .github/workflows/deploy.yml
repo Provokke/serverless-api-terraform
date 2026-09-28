@@ -1,0 +1,65 @@
+# Never run against a real AWS account.
+# One-off setup outside this repo: an IAM OIDC provider for token.actions.githubusercontent.com
+# and a role whose trust policy only allows this repo, e.g.
+#   "token.actions.githubusercontent.com:sub": "repo:<owner>/serverless-api-terraform:ref:refs/heads/main"
+# Also a second read-only role for pull request plans. Store the ARNs as repository variables.
+name: Deploy
+on:
+  pull_request:
+    paths: ["infra/**", "src/**"]
+  push:
+    branches: [main]
+    paths: ["infra/**", "src/**"]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run package
+      - uses: hashicorp/setup-terraform@v3
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: eu-west-2
+      - run: terraform init
+        working-directory: infra/envs/dev
+      - run: terraform plan -input=false -no-color -out=tfplan
+        working-directory: infra/envs/dev
+
+  apply:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: dev # set required reviewers on this GitHub environment
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run package
+      - uses: hashicorp/setup-terraform@v3
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+          aws-region: eu-west-2
+      - run: terraform init
+        working-directory: infra/envs/dev
+      - run: terraform apply -input=false -auto-approve
+        working-directory: infra/envs/dev
