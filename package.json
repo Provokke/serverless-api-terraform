@@ -1,11 +1,13 @@
 {
   "name": "serverless-api-terraform",
-  "version": "0.1.0",
-  "description": "Serverless REST API (Lambda, API Gateway HTTP API, DynamoDB) in TypeScript with Terraform modules and least-privilege IAM.",
+  "version": "0.2.0",
+  "description": "Production-ready serverless REST API template with Lambda, DynamoDB and Terraform modules",
   "license": "MIT",
-  "private": true,
+  "private": false,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "package": "npm run build && node scripts/package.mjs",
@@ -28,5 +30,36 @@
     "typescript": "^5.5.0",
     "typescript-eslint": "^8.0.0",
     "vitest": "^2.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Provokke/serverless-api-terraform.git"
+  },
+  "author": "Provokke",
+  "keywords": [
+    "serverless",
+    "lambda",
+    "terraform",
+    "dynamodb",
+    "api",
+    "aws"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/src/handler.d.ts",
+      "default": "./dist/src/handler.js"
+    },
+    "./validate": {
+      "types": "./dist/src/validate.d.ts",
+      "default": "./dist/src/validate.js"
+    }
+  },
+  "main": "./dist/src/handler.js",
+  "types": "./dist/src/handler.d.ts",
+  "files": [
+    "dist",
+    "infra",
+    "README.md",
+    "LICENSE"
+  ]
 }
